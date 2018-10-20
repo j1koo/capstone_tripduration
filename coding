@@ -38,7 +38,9 @@ library(MASS)
 library(lattice)
 #install.packages("ggplot2")
 library(ggplot2)
-ggplot(set1) + geom_histogram(aes(x = trip_duration), binwidth=10)
+
+#trip_duration
+ggplot(set1, aes(trip_duration)) + geom_histogram(fill='yellow', bins=150) + scale_x_log10() + scale_y_sqrt()
 
 #Convert pickup and dropoff date and times into month, day, hour and minute
 install.packages("lubridate")
