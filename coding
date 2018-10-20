@@ -1,28 +1,54 @@
 # capstone_tripduration
 Capstone Project Title: Investigating factors influencing taxi trip duration and a comparative analysis of prediction models)
 
-#load train and test sets
-train <- read.csv("/Users/joellekoo/Downloads/all/train.csv", stringsAsFactors = FALSE, header = TRUE)
-test <- read.csv("/Users/joellekoo/Downloads/all/test.csv", stringsAsFactors = FALSE, header = TRUE)
+#Load set1 and set2 sets
+set1 <- read.csv("/Users/joellekoo/Downloads/all/train.csv", stringsAsFactors = FALSE, header = TRUE)
+set2 <- read.csv("/Users/joellekoo/Downloads/all/test.csv", stringsAsFactors = FALSE, header = TRUE)der = TRUE)
 
 #Summary of train and test sets
-summary(train)
-summary(test)
+summary(set1)
+summary(set2)
 
 #Structure of train and test sets
-str(train)
-str(test)
+str(set1)
+str(set2)
 
 #Check for missing values
-sapply(train, function(x) sum(is.na(x)))
-sapply(test, function(x) sum(is.na(x)))
+sapply(set1, function(x) sum(is.na(x)))
+sapply(set2, function(x) sum(is.na(x)))
+
 #Two attributes missing from test set: dropoff_datetime and trip_duration
-#Merge/Combine test and train sets provided to maintain consistency and avoid any bias. We will split the merged dataset later on into test and train sets.
+#Option B: Merge/Combine test and train sets provided to maintain consistency and avoid any bias. We will split the merged dataset later on into test and train sets.
 
 #Create columns for test set: dropoff_time and trip_duration
-merged_set <- rbind(train, test)
-rm(train)
-rm(test)
+set2$dropoff_datetime <- as.POSIXct(NA)
+set2$trip_duration <- NA
+merged <- rbind(set1, set2)
 
-str(merged_set)
-summary(merged_set)
+#Convert vendor_id, passenger_count and store_and_fwd_flag from characters to factors
+as.factor(set1$vendor_id)
+as.factor(set1$passenger_count)
+as.factor(set1$store_and_fwd_flag)
+
+
+#Examine distribution of some individual attributes
+#install.packages("MASS")
+library(MASS)
+#install.packages("lattice")
+library(lattice)
+#install.packages("ggplot2")
+library(ggplot2)
+ggplot(set1) + geom_histogram(aes(x = trip_duration), binwidth=10)
+
+#Convert pickup and dropoff date and times into month, day, hour and minute
+install.packages("lubridate")
+library(lubridate)
+set1$pickup_month <- month(set1$pickup_datetime)
+set1$pickup_day <- day(set1$pickup_datetime)
+set1$pickup_hour <- hour(set1$pickup_datetime)
+set1$pickup_min <- minute(set1$pickup_datetime)
+
+set1$dropoff_month <- month(set1$dropoff_datetime)
+set1$dropoff_day <- day(set1$dropoff_datetime)
+set1$dropoff_hour <- hour(set1$dropoff_datetime)
+set1$dropoff_min <- minute(set1$dropoff_datetime)
