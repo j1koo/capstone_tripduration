@@ -1,36 +1,27 @@
 # capstone_tripduration
 Capstone Project Title: Investigating factors influencing taxi trip duration and a comparative analysis of prediction models)
 
-#Load set1 and set2 sets
+#Load dataset
 set1 <- read.csv("/Users/joellekoo/Downloads/all/train.csv", stringsAsFactors = FALSE, header = TRUE)
-set2 <- read.csv("/Users/joellekoo/Downloads/all/test.csv", stringsAsFactors = FALSE, header = TRUE)der = TRUE)
 
-#Summary of sets 1 and 2
-summary(set1)
-summary(set2)
-
-#Structure of sets 1 and 2
-str(set1)
-str(set2)
-
-#Check for missing values in sets 1 and 2
+#Check for missing values in set 1
 sapply(set1, function(x) sum(is.na(x)))
-sapply(set2, function(x) sum(is.na(x)))
 
+#Summary and structure of set1
+summary(set1)
+str(set1)
+
+###
+#For trial purpose only, not going to use set2 in project
+#Load set2
+set2 <- read.csv("/Users/joellekoo/Downloads/all/test.csv", stringsAsFactors = FALSE, header = TRUE)
+#Check for missing values in set2
+sapply(set2, function(x) sum(is.na(x)))
 #Create columns for set2: dropoff_time and trip_duration
 set2$dropoff_datetime <- as.POSIXct(NA)
 set2$trip_duration <- NA
-
-#Convert vendor_id, passenger_count and store_and_fwd_flag from characters to factors
-set1$vendor_id <- as.factor(set1$vendor_id)
-set1$passenger_count <- as.integer(set1$passenger_count)
-set1$store_and_fwd_flag <- as.factor(set1$store_and_fwd_flag)
-set1dropoff_month <- as.integer(set1$dropoff_month)
-
-###OptionB
 #Merge/Combine test and train sets provided to maintain consistency and avoid any bias. We will split the merged dataset later on into test and train sets.
 set3 <- rbind(set1, set2)
-
 #Convert date and time, replace missing values and examine structure and summary of merged set
 set3$pickup_month <- month(set3$pickup_datetime)
 set3$pickup_day <- day(set3$pickup_datetime)
@@ -53,6 +44,14 @@ str(set3)
 summary(set3)
 ###
 
+#Convert vendor_id, passenger_count and store_and_fwd_flag from characters to integers and factors
+set1$vendor_id <- as.integer(set1$vendor_id)
+set1$passenger_count <- as.integer(set1$passenger_count)
+
+set1$store_and_fwd_flag <- as.factor(set1$store_and_fwd_flag)
+levels(set1$store_and_fwd_flag) <- c(0,1)
+#0 is for N and 1 is for Y
+
 #Convert pickup and dropoff date and times into month, day, hour and minute
 #install.packages("lubridate")
 library(lubridate)
@@ -67,78 +66,14 @@ set1$dropoff_hour <- hour(set1$dropoff_datetime)
 set1$dropoff_min <- minute(set1$dropoff_datetime)
 
 #Calculate distance between pickup and dropoff locations
+#install.packages("geosphere")
+library(geosphere)
+#install.packages("dplyr")
+library(dplyr)
 pickup_coord <- select(set1, c(pickup_longitude, pickup_latitude))
 dropoff_coord <- select(set1, c(dropoff_longitude, dropoff_latitude))
 set1$dist <- distCosine(pickup_coord, dropoff_coord)
 
-#Create weekday and weekend columns
-set1$pickup_wday <- wday(set1$pickup_datetime)
-set1$pickup_class <- cut(set1$pickup_wday, breaks=c(0,5,7), labels=c("w-day", "w-end"))
-
-
-#VISUALIZATIONS
-#Examine distribution of individual variables
-#install.packages("ggplot2")
-library(ggplot2)
-
-#vendor_id
-ggplot(set1, aes(x=vendor_id)) + geom_bar()
-
-#pickup_month
-ggplot(set1, aes(x=pickup_month)) + geom_bar()
-#dropoff_month
-ggplot(set1, aes(x=dropoff_month)) + geom_bar()
-
-#pickup_day
-ggplot(set1, aes(x=pickup_day)) + geom_bar()
-#dropoff_day
-ggplot(set1, aes(x=dropoff_day)) + geom_bar()
-
-#pickup_hour
-ggplot(set1, aes(x=pickup_hour)) + geom_bar()
-#dropoff_hour
-ggplot(set1, aes(x=dropoff_hour)) + geom_bar()
-
-max(set1$pickup_hour)
-max(set1$dropoff_hour)
-#23:00 is the latest pickup and dropoff hour
-
-#passenger_count
-ggplot(set1, aes(x=passenger_count)) + geom_bar()
-
-#store_and_fwd_flag
-ggplot(set1, aes(x=store_and_fwd_flag)) + geom_bar()
-
-#weekdays and weekends
-ggplot(set1, aes(x=set1$pickup_class)) + geom_bar() 
-
-#distance between dropoff and pickup
-ggplot(set1, aes(x=dist)) + geom_histogram(bins=40)
-
-#trip_duration
-ggplot(set1, aes(x=trip_duration)) + geom_histogram(bins=1000) 
-
-#trip_duration (without log function)
-ggplot(set1, aes(trip_duration)) + geom_histogram(fill='yellow', bins=40000) + theme_bw()+theme(axis.title = element_text(size=12),axis.text = element_text(size=12)) + ylab("Density")+coord_cartesian(x=c(0,6000))
-
-#trip_duration (applied log function to normalize)
-ggplot(set1, aes(trip_duration)) + geom_histogram(fill='yellow', bins=150) + scale_x_log10() + scale_y_sqrt()
-
-##MULTIPLE LINEAR REGRESSION
-fit <- lm(trip_duration ~ vendor_id + passenger_count + pickup_month + pickup_day + pickup_hour + pickup_min + dropoff_month + dropoff_day + dropoff_hour + dropoff_min + dist + store_and_fwd_flag, data=set1)
-fit2 <- lm(trip_duration ~ vendor_id + passenger_count + pickup_day + pickup_hour + pickup_min + dropoff_month + dropoff_day + dropoff_hour + dist + store_and_fwd_flag, data=set1)
-summary(fit)
-summary(fit2)
-
-#STEPWISE REGRESSION
-library(MASS)
-step <- stepAIC(fit, direction="backward", trace=FALSE)
-step$anova
-
-##RANDOM FOREST
-install.packages("e1071")
-library(e1071)
-library(randomForest)
-set.seed(1)
-train=sample(1:nrow(set1), nrow(set1)/2)
-bag.one <- randomForest(trip_duration~., data=set1, subset=train, importance=TRUE)
+#To avoid overlapping of variables, create new.set without pickup_datetime, dropoff_datetime, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude)
+#To avoid overfitting, the trip id will also not be included in the new.set
+new.set <- subset(set1, select=-c(id, pickup_datetime, dropoff_datetime, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude))
