@@ -44,9 +44,9 @@ str(set3)
 summary(set3)
 ###
 
-#Convert vendor_id, passenger_count and store_and_fwd_flag from characters to integers and factors
-set1$vendor_id <- as.integer(set1$vendor_id)
-set1$passenger_count <- as.integer(set1$passenger_count)
+#Convert vendor_id, passenger_count and store_and_fwd_flag to factors
+set1$vendor_id <- as.factor(set1$vendor_id)
+set1$passenger_count <- as.factor(set1$passenger_count)
 
 set1$store_and_fwd_flag <- as.factor(set1$store_and_fwd_flag)
 levels(set1$store_and_fwd_flag) <- c(0,1)
